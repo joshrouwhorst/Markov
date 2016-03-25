@@ -16,13 +16,18 @@ module.exports = function Markov(phraseList, options) {
     }
 
     function getPrefix(phrase) {
-        var splitPhrase = phrase.split(/[\n ]/g);
+        var splitPhrase = phrase.split(' ');
         var prefix = '';
-        for (var i = 1; i <= options.prefixLength; i++) {
+		var length = options.prefixLength;
+        for (var i = 1; i <= length; i++) {
             var index = splitPhrase.length - i;
             if (index < 0) {
                 break;
             }
+			if (splitPhrase[index].trim() === '') {
+				length++;
+				continue;
+			}
             prefix = splitPhrase[index] + ' ' + prefix;
         }
         return formatPrefix(prefix);
@@ -66,19 +71,25 @@ module.exports = function Markov(phraseList, options) {
 
     function digest() {
         for (var i = 0; i < phraseList.length; i++) {
-            var splitPhrase = phraseList[i].split(/[\n ]/g);
+			var phrase = phraseList[i].replace(/\n/g, '\n ');
+            var splitPhrase = phrase.split(' ');
 
             for (var j = 0; j < splitPhrase.length; j++) {
                 if (splitPhrase[j] === '') {
                     splitPhrase.splice(j--, 1);
                     continue;
                 }
-                
+
                 var prefix = '';
-                for (var k = 1; k <= options.prefixLength; k++) {
+				var length = options.prefixLength;
+                for (var k = 1; k <= length; k++) {
                     if (j - k < 0) {
                         break;
                     }
+					if (splitPhrase[j - k].trim() === '') {
+						length++;
+						continue;
+					}
                     prefix = splitPhrase[j - k] + ' ' + prefix;
                 }
                 prefix = formatPrefix(prefix);
