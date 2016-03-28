@@ -1,5 +1,76 @@
 var Markov = require('./Markov');
 
+var company = Markov.createMarkov();
+
+var myBrand = company.createState();
+
+var otherBrand = company.createState();
+
+myBrand.value = 0.2;
+otherBrand.value = 0.8;
+
+var path = myBrand.createPath();
+path.percent = 0.9;
+path.state = myBrand;
+
+path = myBrand.createPath();
+path.percent = 0.1;
+path.state = otherBrand;
+
+path = otherBrand.createPath();
+path.percent = 0.3;
+path.state = otherBrand;
+
+path = otherBrand.createPath();
+path.percent = 0.7;
+path.state = myBrand;
+
+company.digest();
+
+console.log('NonSimulation');
+for (var week = 1; week < 5; week++) {
+    company.run();
+    console.log("Week " + week);
+    console.log("My Brand: " + myBrand.value);
+    console.log("Other Brand: " + otherBrand.value);
+}
+
+var shopper = Markov.createMarkov();
+
+shopper.simulation = true;
+
+myBrand = shopper.createState();
+otherBrand = shopper.createState();
+
+myBrand.data = 'My Brand';
+otherBrand.data = 'Other Brand';
+
+path = myBrand.createPath();
+path.percent = 0.9;
+path.state = myBrand;
+
+path = myBrand.createPath();
+path.percent = 0.1;
+path.state = otherBrand;
+
+path = otherBrand.createPath();
+path.percent = 0.3;
+path.state = otherBrand;
+
+path = otherBrand.createPath();
+path.percent = 0.7;
+path.state = myBrand;
+
+shopper.currentState = myBrand;
+shopper.digest();
+
+console.log('Simulation');
+for (week = 1; week < 5; week++) {
+    shopper.run();
+    console.log('Week ' + week);
+    console.log('Brand ' + shopper.currentState.data);
+}
+
 // var texts = [
 //     "Why few hackers are lining up to help FBI crack iPhone encryption",
 //     "This sassy Twitter chatbot by Microsoft talks smack like a Millennial...and it's awesome",
@@ -214,30 +285,30 @@ var Markov = require('./Markov');
 // End
 // `];
 
-var texts = [
-	`
-In a new Bloomberg poll conducted by Selzer & Co., Bernie Sanders has a slight national edge over Hillary Clinton, earning 49 percent of support to Clinton's 48. This is only the second poll ever to show Sanders with a lead of any sort, and is at odds with other recent polls showing Clinton with a double-digit lead. But it's clear that it accurately reflects one facet of the Democratic race: Sanders and Clinton are in a tough, evenly fought contest and will likely continue to be.*
-
-What's interesting about the new Selzer poll is why the race is so close. In theory, Clinton should have run away with it. This was the thinking a year ago today, when Clinton had a 54-point lead over Sanders. But over time that lead narrowed and narrowed and narrowed, leading us to this point. The reason? The economy.
-
-Selzer asked Democrats who they thought would be better at handling a number of issues that will face the next president. Clinton came out on top on issues of foreign policy; Sanders on economic issues.
-
-On the flip side, the pollsters also asked what bothered voters about each of the candidates. A sizable majority of Democrats aren't worried about the investigation into Clinton's private email server as secretary of state, but about half are bothered by her apparently flipping her position on the Trans-Pacific Partnership trade deal. And more than half are bothered by the money she took to give speeches to Wall Street.
-
-For Sanders, there's not much worry about his identifying as a democratic socialist or his near-singular focus on the economy. But his lack of foreign policy know-how does give 6 in 10 Democrats pause.
-
-Despite that foreign policy liability, though, Sanders is up by one.
-
-The reason? Democrats have much different policy priorities than do Republicans. In Pew Research's annual survey of priorities for voters, Democrats are consistently more worried about economic issues than the issue of terrorism, while Republicans have gone back and forth. What's more, Democratic concern about terrorism has stayed relatively flat over the past decade, save for 2010.
-	`
-];
-var options;
-
-for (var i = 0; i < process.argv.length; i++) {
-	var arg = process.argv[i];
-	if (arg !== 'node' && arg !== 'app' && arg !== 'app.js') {
-		options = { prefixLength: parseInt(arg, 10) };
-	}
-}
-
-console.log(Markov(texts, options));
+// var texts = [
+// 	`
+// In a new Bloomberg poll conducted by Selzer & Co., Bernie Sanders has a slight national edge over Hillary Clinton, earning 49 percent of support to Clinton's 48. This is only the second poll ever to show Sanders with a lead of any sort, and is at odds with other recent polls showing Clinton with a double-digit lead. But it's clear that it accurately reflects one facet of the Democratic race: Sanders and Clinton are in a tough, evenly fought contest and will likely continue to be.*
+//
+// What's interesting about the new Selzer poll is why the race is so close. In theory, Clinton should have run away with it. This was the thinking a year ago today, when Clinton had a 54-point lead over Sanders. But over time that lead narrowed and narrowed and narrowed, leading us to this point. The reason? The economy.
+//
+// Selzer asked Democrats who they thought would be better at handling a number of issues that will face the next president. Clinton came out on top on issues of foreign policy; Sanders on economic issues.
+//
+// On the flip side, the pollsters also asked what bothered voters about each of the candidates. A sizable majority of Democrats aren't worried about the investigation into Clinton's private email server as secretary of state, but about half are bothered by her apparently flipping her position on the Trans-Pacific Partnership trade deal. And more than half are bothered by the money she took to give speeches to Wall Street.
+//
+// For Sanders, there's not much worry about his identifying as a democratic socialist or his near-singular focus on the economy. But his lack of foreign policy know-how does give 6 in 10 Democrats pause.
+//
+// Despite that foreign policy liability, though, Sanders is up by one.
+//
+// The reason? Democrats have much different policy priorities than do Republicans. In Pew Research's annual survey of priorities for voters, Democrats are consistently more worried about economic issues than the issue of terrorism, while Republicans have gone back and forth. What's more, Democratic concern about terrorism has stayed relatively flat over the past decade, save for 2010.
+// 	`
+// ];
+// var options;
+//
+// for (var i = 0; i < process.argv.length; i++) {
+// 	var arg = process.argv[i];
+// 	if (arg !== 'node' && arg !== 'app' && arg !== 'app.js') {
+// 		options = { prefixLength: parseInt(arg, 10) };
+// 	}
+// }
+//
+// console.log(Markov(texts, options));

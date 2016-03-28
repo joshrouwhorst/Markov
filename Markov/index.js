@@ -1,105 +1,149 @@
-module.exports = function Markov(phraseList, options) {
-    var fixes = {};
-    var defaultOptions = {
-        prefixLength: 1,
-        caseSensitive: false
+module.exports = MarkovPackage = {};
+
+function Path() {
+    this.percent = 0;
+    this.state = null;
+}
+
+function State() {
+    var opts = {
+    };
+    var _this = this;
+    var newValue = 0;
+
+    this._markov = null;
+    this.value = 0;
+    this.paths = {
+        incoming: [],
+        outgoing: []
+    }
+
+    this.createPath = function () {
+        var path = new Path();
+        _this.paths.outgoing.push(path);
+        return path;
+    }
+
+    this.removePath = function (path) {
+        var index = _this.paths.outgoing.indexOf(path);
+        if (index > -1) {
+            _this.paths.outgoing.splice(index, 1);
+        }
+    }
+
+    this._setOptions = function (options) {
+        for (var opt in opts) {
+            if (options.hasOwnProperty(opt)) {
+                opts[opt] = options[opt];
+            }
+        }
     };
 
-    function setup() {
-        if (!options) options = {};
-
-        for (var opt in defaultOptions) {
-            if (!options.hasOwnProperty(opt)) {
-                options[opt] = defaultOptions[opt];
+    this._run = function () {
+        if (!_this._markov.simulation) {
+            var val = 0;
+            for (var i = 0; i < _this.paths.incoming.length; i++) {
+                var path =  _this.paths.incoming[i]
+                val += path.state.value * path.percent;
             }
+            newValue = val;
         }
-    }
-
-    function getPrefix(phrase) {
-        var splitPhrase = phrase.split(' ');
-        var prefix = '';
-		var length = options.prefixLength;
-        for (var i = 1; i <= length; i++) {
-            var index = splitPhrase.length - i;
-            if (index < 0) {
-                break;
-            }
-			if (splitPhrase[index].trim() === '') {
-				length++;
-				continue;
-			}
-            prefix = splitPhrase[index] + ' ' + prefix;
-        }
-        return formatPrefix(prefix);
-    }
-
-    function generateSuffix(phrase, prefix) {
-        var suffixes = fixes[prefix];
-
-        if (!suffixes || suffixes.length === 0) {
-            return phrase;
-        }
-
-        var choiceGaps = 1 / suffixes.length;
-        var random = Math.random();
-        var index = Math.floor(random / choiceGaps);
-        var suffix = suffixes.splice(index, 1)[0];
-        return phrase + ' ' + suffix;
-    }
-
-    function generate() {
-        var currentPrefix;
-        var phrase = '';
-        var phraseLength;
-
-        do {
-            phraseLength = phrase.length;
-            currentPrefix = getPrefix(phrase);
-            phrase = generateSuffix(phrase, currentPrefix);
-        } while (phrase.length > phraseLength)
-
-        return phrase.trim();
-    }
-
-    function formatPrefix(prefix) {
-        prefix = prefix.trim();
-        if (!options.caseSensitive) prefix = prefix.toLowerCase();
-        prefix = prefix.replace(/[^0-9a-zA-Z ]/g, '');
-        if (prefix === '') prefix = '_';
-        return prefix;
-    }
-
-    function digest() {
-        for (var i = 0; i < phraseList.length; i++) {
-			var phrase = phraseList[i].replace(/\n/g, '\n ');
-            var splitPhrase = phrase.split(' ');
-
-            for (var j = 0; j < splitPhrase.length; j++) {
-                if (splitPhrase[j] === '') {
-                    splitPhrase.splice(j--, 1);
-                    continue;
+        else {
+            var randomNumber = Math.random();
+            var percent = 0;
+            for (var i = 0; i < _this.paths.outgoing.length; i++) {
+                var path =  _this.paths.outgoing[i];
+                percent += path.percent;
+                if (randomNumber <= percent) {
+                    _this._markov.currentState = path.state;
+                    break;
                 }
-
-                var prefix = '';
-				var length = options.prefixLength;
-                for (var k = 1; k <= length; k++) {
-                    if (j - k < 0) {
-                        break;
-                    }
-					if (splitPhrase[j - k].trim() === '') {
-						length++;
-						continue;
-					}
-                    prefix = splitPhrase[j - k] + ' ' + prefix;
-                }
-                prefix = formatPrefix(prefix);
-                if (!fixes[prefix]) fixes[prefix] = [];
-                fixes[prefix].push(splitPhrase[j]);
             }
         }
     }
 
-    setup();
-    digest(phraseList);
-    return generate();
+    this._update = function () {
+        _this.value = newValue;
+    }
+
+    this._resetPaths = function () {
+        _this.paths.incoming.splice(0, _this.paths.incoming.length);
+    }
+
+    this._digest = function () {
+        if (!_this._markov.simulation) {
+            for (var i = 0; i < _this.paths.outgoing.length; i++) {
+                var path = _this.paths.outgoing[i];
+                var newPath = new Path();
+                newPath.percent = path.percent;
+                newPath.state = _this;
+                _this.paths.outgoing[i].state.paths.incoming.push(newPath);
+            }
+        }
+        else {
+            _this.paths.outgoing.sort(function (a, b) {
+                if (a.percent < b.percent) return -1;
+                else if (a.percent > b.percent) return 1;
+                else return 0;
+            });
+        }
+    }
+}
+
+function Markov() {
+    var states = [];
+    var _this = this;
+
+    this.simulation = false;
+    this.currentState = null;
+
+    this.createState = function () {
+        var state = new State();
+        state._markov = _this;
+        states.push(state);
+        return state;
+    };
+
+    this.removeState = function (state) {
+        var index = states.indexOf(state);
+        if (index > -1) {
+            states.splice(index, 1);
+        }
+    };
+
+    this.setOptions = function (options) {
+        for (var opt in opts) {
+            if (options.hasOwnProperty(opt)) {
+                opts[opt] = options[opt];
+            }
+        }
+    };
+
+    this.digest = function () {
+        for (var i = 0; i < states.length; i++) {
+            states[i]._resetPaths();
+        }
+        for (i = 0; i < states.length; i++) {
+            states[i]._digest();
+        }
+    };
+
+    this.run = function () {
+        if (_this.simulation) {
+            _this.currentState._run();
+        }
+        else {
+            for (var i = 0; i < states.length; i++) {
+                states[i]._run();
+            }
+
+            for (i = 0; i < states.length; i++) {
+                states[i]._update();
+            }
+        }
+    };
+}
+
+MarkovPackage.createMarkov = function () {
+    return new Markov();
 };
